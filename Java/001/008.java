@@ -5,13 +5,13 @@ public class Days {
 
 	public static void main(String[] args) {
 		int a , b ;
-		System.out.println("请输入你要查询的月数：");
+		System.out.println("请输入你要查询哪一年的月数：");
 		in22 = new Scanner(System.in);
 		a = in22.nextInt();
 		b = in22.nextInt();
 		if(13>b && b>0){
 		if(b == 2  ){
-			if(a % 4 == 0 && a % 100 != 0 || a % 400 == 0 ){
+			if(a % 4 == 0 && a % 100 != 0 || a % 400 == 0 && a%1000 == 0){
 				System.out.println("该月有的天数为：" + 29);
 			}
 			
