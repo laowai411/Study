@@ -11,7 +11,10 @@
         if分支与for循环
         运算符
         switch语句
+	方法与重载
+	对象转型
         非递归
 	whlie循环
 	do while 循环
+     	数组
 	
