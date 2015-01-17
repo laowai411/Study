@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   width="600" height="440" backgroundColor="#CCCCCC" creationComplete="init()"
+					   preloaderChromeColor="#A8A8A8">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.graphics.codec.JPEGEncoder;
+
+			private var gLogFile:File;
+			
+			private var gLogOS:FileStream;
+			
+			/**
+			 * 地图块位图数据列表
+			 * */
+			private var gCeilBpdList:Array;
+			
+			/**
+			 * 地图块文件列表
+			 * */
+			private var gCeilFileList:Array;
+			
+			/**
+			 * 合成后的整张地图BitmapData
+			 * */
+			private var gMapBpd:BitmapData;
+			
+			/**
+			 * 用于控制加载的计时器
+			 * */
+			private var gLoadTimer:Timer;
+			
+			/**
+			 * 用于控制合并位图的计时器
+			 * */
+			private var gPieceTimer:Timer;
+			
+			/**
+			 * 地图块加载器
+			 * */
+			private var gLoader:Loader;
+			
+			/**
+			 * 是否正在加载或者正在合并
+			 * */
+			private var gIsOPing:Boolean;
+			
+			/**
+			 * 整张地图的起始行
+			 * */
+			private var gMinRow:int;
+			/**
+			 * 整张地图最大的行
+			 * */
+			private var gMaxRow:int;
+			/**
+			 * 整张地图起始列
+			 * */
+			private var gMinCol:int;
+			/**
+			 * 整张地图最大列
+			 * */
+			private var gMaxCol:int;
+			
+			/**
+			 * 当前操作的地图块或者位图的索引
+			 * */
+			private var gIndex:int;
+			
+			private const origin:Point = new Point(0, 0);
+			
+			/**
+			 * 格子列宽度列表
+			 * */
+			private var gColWidthList:Array = [];
+			
+			/**
+			 * 格子行高度列表
+			 * */
+			private var gRowHeightList:Array = [];
+			
+			/**
+			 * 整张地图的宽度
+			 * */
+			private var gMapWidth:int;
+			
+			/**
+			 * 整张地图的高度
+			 * */
+			private var gMapHeight:int;
+			
+			private var gLog:String;
+			
+			private function init():void
+			{
+				gLogFile = new File("D:\\log.log");
+				gLoadTimer = new Timer(10);
+				gLoadTimer.addEventListener(TimerEvent.TIMER, onTimerLoadHandler);
+				gPieceTimer = new Timer(10);
+				gPieceTimer.addEventListener(TimerEvent.TIMER, onTimerPieceHandler);
+				gLoader = new Loader();
+				gLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadCeilCompleteHandler);
+			}
+			
+			/**
+			 * 每隔30ms尝试加载一个地图块
+			 * */
+			private function onTimerLoadHandler(e:Event):void
+			{
+				if(gCeilFileList.length>gIndex)
+				{
+					if(gIsOPing == false)
+					{
+						var file:File = gCeilFileList[gIndex];
+						gLoader.load(new URLRequest(file.nativePath));
+						gIsOPing = true;
+						gIndex++;
+						showProgressInfo(gIndex/gCeilFileList.length*50, "正在加载  "+file.name+" ，当前第 "+gIndex+" 个，剩余 "+(gCeilFileList.length-gIndex));
+						if(gCeilFileList.length <= gIndex)
+						{
+							gLoadTimer.stop();
+							showProgressInfo(50, "全部地图块加载完成，准备生成大地图");
+							createMapBitmapData();
+						}
+					}
+				}
+			}
+			
+			/**
+			 * 一个地图块加载完成
+			 * */
+			private function onLoadCeilCompleteHandler(e:Event):void
+			{
+				var url:String = e.target.url;
+				var bmpData:BitmapData = (e.target.content as Bitmap).bitmapData;
+				var name:String = url.substring(url.lastIndexOf("/")+1);
+				name = name.replace(gTxtStartName.text, "").replace(".jpg", "").replace(".png", "");
+				var pos:Array = name.split(gTxtSplitSign.text);
+				var colIndex:int;
+				var rowIndex:int;
+				if(gRadioCol.selected == true)
+				{
+					colIndex = int(pos[0]);
+					rowIndex = int(pos[1]);
+				}
+				else
+				{
+					colIndex = int(pos[1]);
+					rowIndex = int(pos[0]);
+				}
+				gCeilBpdList.push({"data":bmpData, "col":colIndex, "row":rowIndex, "url":url});
+				writeLog("加载:"+ e.target.url, rowIndex, colIndex, bmpData.width, bmpData.height);
+				gMinRow = Math.min(gMinRow, rowIndex);
+				gMaxRow = Math.max(gMaxRow, rowIndex);
+				gMinCol = Math.min(gMinCol, colIndex);
+				gMaxCol = Math.max(gMaxCol, colIndex);
+				if(!gColWidthList[colIndex])
+				{
+					gColWidthList[colIndex] = bmpData.width;
+					gMapWidth += bmpData.width;
+				}
+				if(!gRowHeightList[rowIndex])
+				{
+					gRowHeightList[rowIndex] = bmpData.height;
+					gMapHeight += bmpData.height;
+				}
+				gIsOPing = false;
+			}
+			
+			/**
+			 * 写入日志
+			 * */
+			private function writeLog(...args):void
+			{
+				if(!gLogOS)
+				{
+					gLogOS = new FileStream();
+					gLogOS.open(gLogFile, FileMode.APPEND);
+				}
+//				gLogOS.writeUTFBytes(args.join(", ")+"\n");
+			}
+			
+			/**
+			 * 合成
+			 * */
+			private function onClickStartHandler():void
+			{
+				if(gLogFile.exists == false)
+				{
+					gLogOS = new FileStream();
+					gLogOS.open(gLogFile, FileMode.WRITE);
+					gLogOS.writeUTFBytes("创建log...");
+					gLogOS.close();
+					gLogOS = null;
+				}
+				if(!gTxtUrl.text)
+				{
+					Alert.show("路径错误！");
+					return;
+				}
+				var file:File = new File(gTxtSaveUrl.text);
+				if(!file.exists)
+				{
+					Alert.show("保存路径错误！");
+					return;
+				}
+				gIndex = 0;
+				enable = false;
+				gIsOPing = false;
+				gCeilBpdList = [];
+				gCeilFileList = [];
+				gColWidthList = [];
+				gRowHeightList = [];
+				gMapWidth = 0;
+				gMapHeight = 0;
+				if(gMapBpd)
+				{
+					gMapBpd.dispose();
+					gMapBpd = null;
+				}
+				file = new File(gTxtUrl.text);
+				getFileList(file);
+				gLoadTimer.start();
+				showProgressInfo(1, "开始加载地图块...");
+			}
+			
+			/**
+			 * 合成BitmapData
+			 * */
+			private function createMapBitmapData():void
+			{
+				showProgressInfo(51, "创建大地图..."+gMapWidth+" x " +gMapHeight);
+				gMapBpd = new BitmapData(gMapWidth, gMapHeight);
+				gIndex = 0;
+				gIsOPing = false;
+				gPieceTimer.start();
+			}
+			
+			/**
+			 * 每隔一定时间copy一个地图块到整张地图的BitmapData
+			 * */
+			private function onTimerPieceHandler(e:Event):void
+			{
+				if(gCeilBpdList.length>gIndex)
+				{
+					if(gIsOPing == false)
+					{
+						gIsOPing = true;
+						var ceilData:Object = gCeilBpdList[gIndex];
+						var bpd:BitmapData = ceilData.data;
+						var tempHeight:int = 0;
+						var tempWidth:int = 0;
+						for(var i:int=gMinRow; i<ceilData.row; i++)
+						{
+							tempHeight += gRowHeightList[i];							
+						}
+						for(i=gMinCol; i<ceilData.col; i++)
+						{
+							tempWidth += gColWidthList[i];
+						}
+						writeLog("合成:", ceilData.url, ceilData.row, ceilData.col, ceilData.data.width, ceilData.data.height, tempWidth, tempHeight);
+						var m:Matrix = new Matrix(1, 0, 0, 1, tempWidth, tempHeight);
+						gMapBpd.draw(bpd, m, null, null, null);
+						gIndex++;
+						showProgressInfo(gIndex/gCeilBpdList.length*100, "正在处理第 "+gIndex+" 个，剩余 "+(gCeilBpdList.length-gIndex));
+						gIsOPing = false;
+						if(gCeilBpdList.length <= gIndex)
+						{
+							gPieceTimer.stop();
+							showProgressInfo(99, "开始生成文件...");
+							createMapFile(gMapBpd);
+						}
+					}
+				}
+			}
+			
+			/**
+			 * 生成合成后的地图文件
+			 * */
+			private function createMapFile(mapBpd:BitmapData):void
+			{
+				var file:File = new File(gTxtSaveUrl.text+"\\piece.jpg");
+				var jpgEncode:JPEGEncoder = new JPEGEncoder(100);
+				var os:FileStream = new FileStream();
+				os.open(file, FileMode.WRITE);
+				os.writeBytes(jpgEncode.encode(mapBpd));
+				os.close();
+				file.cancel();
+				Alert.show(gTxtSaveUrl.text+"\piece.jpg 生成完成！");
+				showProgressInfo(100, "合成成功...");
+				enable = true;
+			}
+			
+			/**
+			 * 获取所有的地图块
+			 * */
+			private function getFileList(cusDir:File):void
+			{
+				var tempFileList:Array = cusDir.getDirectoryListing();
+				for each(var file:File in tempFileList)
+				{
+					if((file.type == ".jpg" || file.type == ".png")&& file.name.indexOf(gTxtStartName.text) == 0)
+					{
+						var name:String = file.name.replace(gTxtStartName.text);
+						gCeilFileList.push(file);
+					}
+				}
+			}
+			
+			/**
+			 * 选择
+			 * */
+			private function onClickSelecteHandler():void
+			{
+				var file:File = new File();
+				file.browseForDirectory("地图块路径");
+				file.addEventListener(Event.SELECT, onSelectedHandler);
+			}
+			
+			/**
+			 * 选择保存的目录
+			 * */
+			private function onClickSaveSelecteHandler():void
+			{
+				var file:File = new File();
+				file.browseForDirectory("保存路径");
+				file.addEventListener(Event.SELECT, onSelecteSaveHandler);
+			}
+			
+			/**
+			 * 选定了保存的路径
+			 * */
+			private function onSelecteSaveHandler(e:Event):void
+			{
+				var file:File = e.target as File;
+				gTxtSaveUrl.text = file.nativePath;
+			}
+			
+			/**
+			 * 选定了地图块所在的目录
+			 * */
+			private function onSelectedHandler(e:Event):void
+			{
+				var file:File = e.target as File;
+				gTxtUrl.text = file.nativePath;
+			}
+			
+			/**
+			 * 设置是否可操作
+			 * */
+			private function set enable(cusValue:Boolean):void
+			{
+				gBtnSelecte.enabled = cusValue;
+				gBtnStart.enabled = cusValue;
+				gTxtUrl.enabled = cusValue;
+				gTxtSplitSign.enabled = cusValue;
+				gTxtStartName.enabled = cusValue;
+				gTxtSaveUrl.enabled = cusValue;
+				gBtnSaveSelecte.enabled = cusValue;
+				gRadioCol.enabled = cusValue;
+				gRadioRow.enabled = cusValue;
+//				gTxtWidth.enabled = cusValue;
+//				gTxtHeight.enabled = cusValue;
+			}
+			
+			/**
+			 * 显示进度条
+			 * */
+			private function showProgressInfo(percent:Number, cusTxt:String):void
+			{
+				gBar.setProgress(percent, 100);
+				gBar.label = cusTxt;
+			}
+				
+		]]>
+	</fx:Script>
+	<s:Label x="44" y="79" fontSize="14" fontWeight="bold" text="地图块目录:"/>
+	<s:TextInput id="gTxtUrl" x="127" y="71" width="363" height="30" text="D:\wssb\地图块"/>
+	<s:Button id="gBtnStart" x="463" y="306" width="100" height="50" label="合  成"
+			  chromeColor="#CCCCCC" click="onClickStartHandler()" fontSize="22" fontWeight="bold"/>
+	<s:Button id="gBtnSelecte" x="507" y="74" label="选择..." click="onClickSelecteHandler()"/>
+	<s:TextInput id="gTxtStartName" x="122" y="158" text=""/>
+	<s:Label x="43" y="154" width="95" height="30" fontSize="14" fontWeight="normal" text="地图块前缀"
+			 verticalAlign="middle"/>
+	<s:Label x="283" y="154" width="120" height="30" fontSize="14" text="地图块横纵分隔符"
+			 verticalAlign="middle"/>
+	<s:TextInput id="gTxtSplitSign" x="415" y="158" text="_"/>
+	<s:Image x="73" y="188" width="192" height="163" scaleMode="stretch" source="assets/example.png"/>
+	<mx:ProgressBar id="gBar" x="44" y="370" width="516" height="46" label="进度..."
+					indeterminate="false" labelPlacement="bottom" maximum="100" minimum="0" mode="manual"/>
+	<s:Label x="39" y="202" width="40" height="130" fontSize="28" fontStyle="italic" fontWeight="bold"
+			 text="示例切片" verticalAlign="middle"/>
+	<s:Label x="190" y="30" width="220" height="30" fontSize="20" fontWeight="bold" text="地图切片合成工具"
+			 textAlign="center" verticalAlign="middle"/>
+	<s:Label x="44" y="123" fontSize="14" text="保存目录："/>
+	<s:TextInput id="gTxtSaveUrl" x="127" y="117" width="363" height="30" text="D:\wssb\地图"/>
+	<s:Button x="507" y="122" label="选择..." id="gBtnSaveSelecte" click="onClickSaveSelecteHandler()"/>
+	<s:RadioButton id="gRadioCol" x="304" y="222" label="列" groupName="ff"/>
+	<s:RadioButton id="gRadioRow" x="305" y="246" label="行" groupName="ff" selected="true"/>
+	<s:Label x="300" y="203" fontSize="14" text="分隔符第一位"/>
+	<!--
+	<s:Label x="424" y="205" fontSize="14" text="地图片宽度"/>
+	<s:TextInput id="gTxtWidth" x="502" y="198" width="41" height="30" text="256"/>
+	<s:Label x="424" y="246" fontSize="14" text="地图片高度"/>
+	<s:TextInput id="gTxtHeight" x="502" y="237" width="41" height="30" text="256"/>
+	<s:Label x="545" y="208" text="px"/>
+	<s:Label x="545" y="246" text="px"/>
+	-->
+</s:WindowedApplication>
