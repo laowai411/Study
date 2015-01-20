@@ -1,4 +1,6 @@
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -7,6 +9,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
@@ -25,8 +29,6 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
-import java.awt.Font;
-import java.awt.Toolkit;
 
 /***
  * 可以将线程加入(待优化)
@@ -115,12 +117,12 @@ public class Window extends JFrame {
 	/**
 	 * 列索引
 	 * */
-	private int[] colWidthList;
+	private HashMap<Integer, Integer> colWidthMap = new HashMap<Integer, Integer>();
 
 	/**
 	 * 行高度
 	 * */
-	private int[] rowHeightList;
+	private HashMap<Integer, Integer> rowHeightMap = new HashMap<Integer, Integer>();
 
 	/**
 	 * 当前是否在操作中
@@ -130,57 +132,114 @@ public class Window extends JFrame {
 	/**
 	 * 地图块文件
 	 * */
-	private File[] ceilFileList;
+	private LinkedList<File> ceilFileList = new LinkedList<File>();
 
 	/**
 	 * 地图块位图数据
 	 * */
-	private CeilDataVo[] ceilDataList;
+	private LinkedList<CeilDataVo> ceilDataList = new LinkedList<CeilDataVo>();
 
 	/**
-	 * 当前操作索引
+	 * 一个地图块的二进制数据,重复使用(所有地图块中最大的)
 	 * */
-	private int index = 0;
+	private int[] bitmapData;
 
+	/**
+	 * 加载计时器回调
+	 * */
+	private ActionListener onLoadTimerHandler = new ActionListener() {
+		// 加载
+		public void actionPerformed(ActionEvent e) {
+			if (isOping == false) {
+				isOping = true;
+				loadCeil(ceilFileList.pop());
+				isOping = false;
+				// 合成
+				if (ceilFileList.size() < 1) {
+					loadTimer.stop();
+					map = new BufferedImage(mapWidth, mapHeigth,
+							BufferedImage.TYPE_3BYTE_BGR);
+					copyPixes();
+				}
+			}
+		}
+	};
+
+	/**
+	 * copy地图块计时器回调
+	 * */
+	private ActionListener onCopyTimerHandler = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			if (isOping == false) {
+				isOping = true;
+				CeilDataVo data = ceilDataList.pop();
+				Raster raster = data.image.getData();
+				if (bitmapData == null
+						|| bitmapData.length < raster.getWidth()
+								* raster.getHeight()) {
+					bitmapData = new int[raster.getWidth() * raster.getHeight()];
+				}
+				raster.getPixel(0, 0, bitmapData);
+				int tempWidth = 0;
+				int tempHeight = 0;
+				for (int i = 0; i < data.row; i++) {
+					tempHeight += rowHeightMap.get(i);
+				}
+				for (int i = 0; i < data.col; i++) {
+					tempWidth += colWidthMap.get(i);
+				}
+				map.getGraphics().drawImage(data.image, tempWidth, tempHeight,
+						null);
+				showMsg("拷贝地图块数据:" + data.url + ", 剩余" + ceilDataList.size());
+				// 释放内存?
+				CeilDataVo.cacheCeilDataVo(data);
+				data = null;
+				isOping = false;
+				if (ceilDataList.size() < 1) {
+					pieceTimer.stop();
+					showMsg("开始生成地图文件");
+					createMapFile();
+				}
+			}
+		}
+	};
+
+	/**
+	 * 开始
+	 * */
 	private void startLoad() {
 		if (checkCeilPath() == false) {
+			this.setEnable(true);
 			JOptionPane.showMessageDialog(null, "地图块路径错误!");
 			return;
 		}
 		if (checkSavePath() == false) {
+			this.setEnable(true);
 			JOptionPane.showMessageDialog(null, "保存路径错误");
 			return;
 		}
 		fixURL();
+		bitmapData = null;
+		map = null;
+		isOping = false;
 		mapWidth = 0;
 		mapHeigth = 0;
-		isOping = false;
-		ceilFileList = new File(gURLCeil.getText())
+		File[] files = new File(gURLCeil.getText())
 				.listFiles(new ImageFilter());
-		colWidthList = new int[ceilFileList.length];
-		rowHeightList = new int[ceilFileList.length];
-		ceilDataList = new CeilDataVo[ceilFileList.length];
-
-		if (loadTimer == null) {
-			loadTimer = new Timer(10, new ActionListener() {
-				// 加载
-				public void actionPerformed(ActionEvent e) {
-					if (isOping == false) {
-						isOping = true;
-						loadCeil(ceilFileList[index]);
-						index++;
-						isOping = false;
-						// 合成
-						if (index >= ceilFileList.length) {
-							loadTimer.stop();
-							map = new BufferedImage(mapWidth, mapHeigth,
-									BufferedImage.TYPE_3BYTE_BGR);
-							copyPixes();
-						}
-					}
-				}
-			});
+		int len = files != null ? files.length : 0;
+		for (int i = 0; i < len; i++) {
+			ceilFileList.add(files[i]);
 		}
+		colWidthMap = new HashMap<Integer, Integer>();
+		rowHeightMap = new HashMap<Integer, Integer>();
+
+		if (loadTimer != null) {
+			loadTimer.stop();
+			loadTimer.removeActionListener(onLoadTimerHandler);
+			loadTimer = null;
+		}
+
+		loadTimer = new Timer(10, onLoadTimerHandler);
 		loadTimer.start();
 	}
 
@@ -226,30 +285,38 @@ public class Window extends JFrame {
 	private void loadCeil(File file) {
 		try {
 			BufferedImage image = ImageIO.read(file);
-			String name = file.getName().replace(gTxtHeadSign.getText(), "")
-					.replace(".jpg", "").replace(".png", "");
-			String[] inds = name.split(gTxtSplitSign.getText());
-			int row = 0;
-			int col = 0;
-			if (gRadioCol.isSelected()) {
-				col = Integer.parseInt(inds[0]);
-				row = Integer.parseInt(inds[1]);
-			} else {
-				col = Integer.parseInt(inds[1]);
-				row = Integer.parseInt(inds[0]);
+			if (file.getName().toLowerCase()
+					.startsWith(gTxtHeadSign.getText().toLowerCase())
+					&& file.getName().toLowerCase()
+							.indexOf(gTxtSplitSign.getText().toLowerCase()) > -1) {
+				String name = file.getName().toLowerCase()
+						.replace(gTxtHeadSign.getText().toLowerCase(), "")
+						.replace(".jpg", "").replace(".png", "");
+				String[] inds = name.split(gTxtSplitSign.getText()
+						.toLowerCase());
+				int row = 0;
+				int col = 0;
+				if (gRadioCol.isSelected()) {
+					col = Integer.parseInt(inds[0]);
+					row = Integer.parseInt(inds[1]);
+				} else {
+					col = Integer.parseInt(inds[1]);
+					row = Integer.parseInt(inds[0]);
+				}
+				if (colWidthMap.get(col) == null) {
+					colWidthMap.put(col, image.getWidth());
+					mapWidth += colWidthMap.get(col);
+				}
+				if (rowHeightMap.get(row) == null) {
+					rowHeightMap.put(row, image.getHeight());
+					mapHeigth += rowHeightMap.get(row);
+				}
+				ceilDataList.add(CeilDataVo.getCeilDataVo(image, col, row,
+						file.getPath()));
+				showMsg("载入地图块:" + file.getPath() + ", 剩余"
+						+ ceilFileList.size());
+				file = null;
 			}
-			if (colWidthList[col] < 1) {
-				colWidthList[col] = image.getWidth();
-				mapWidth += colWidthList[col];
-			}
-			if (rowHeightList[row] < 1) {
-				rowHeightList[row] = image.getHeight();
-				mapHeigth += rowHeightList[row];
-			}
-			ceilDataList[index] = new CeilDataVo(image, col, row,
-					file.getPath());
-			showMsg("载入地图块:" + file.getPath() + ", 剩余"
-					+ (ceilFileList.length - index + 1));
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(null, "载入地图块失败!");
 			e.printStackTrace();
@@ -260,39 +327,12 @@ public class Window extends JFrame {
 	 * 循环给大地图copypixes
 	 * */
 	private void copyPixes() {
-		if (pieceTimer == null) {
-			pieceTimer = new Timer(10, new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					if (isOping == false) {
-						isOping = true;
-						Raster raster = ceilDataList[index].image.getData();
-						int[] bitmapData = new int[raster.getWidth()
-								* raster.getHeight()];
-						raster.getPixel(0, 0, bitmapData);
-						int tempWidth = 0;
-						int tempHeight = 0;
-						for (int i = 0; i < ceilDataList[index].row; i++) {
-							tempHeight += rowHeightList[i];
-						}
-						for (int i = 0; i < ceilDataList[index].col; i++) {
-							tempWidth += colWidthList[i];
-						}
-						map.getGraphics().drawImage(ceilDataList[index].image,
-								tempWidth, tempHeight, null);
-						showMsg("拷贝地图块数据:" + ceilDataList[index].url + ", 剩余"
-								+ (ceilDataList.length - index + 1));
-						index++;
-						isOping = false;
-						if (index >= ceilDataList.length) {
-							pieceTimer.stop();
-							showMsg("开始生成地图文件");
-							createMapFile();
-						}
-					}
-				}
-			});
+		if (pieceTimer != null) {
+			pieceTimer.stop();
+			pieceTimer.removeActionListener(onCopyTimerHandler);
+			pieceTimer = null;
 		}
-		index = 0;
+		pieceTimer = new Timer(10, onCopyTimerHandler);
 		pieceTimer.start();
 	}
 
@@ -343,7 +383,11 @@ public class Window extends JFrame {
 	 * Create the frame.
 	 */
 	public Window() {
-		setIconImage(Toolkit.getDefaultToolkit().getImage(Window.class.getResource("/javax/swing/plaf/metal/icons/ocean/hardDrive.gif")));
+		setIconImage(Toolkit
+				.getDefaultToolkit()
+				.getImage(
+						Window.class
+								.getResource("/javax/swing/plaf/metal/icons/ocean/hardDrive.gif")));
 		setFont(new Font("Courier New", Font.PLAIN, 12));
 		setResizable(false);
 		setTitle("地图块合成工具1.0.0");
@@ -358,7 +402,7 @@ public class Window extends JFrame {
 		JLabel lblNewLabel_1 = new JLabel("地图块路径");
 
 		gURLCeil = new JTextField();
-		gURLCeil.setText("D:\\wssj\\地图块\\");
+		gURLCeil.setText("D:\\wssb\\地图块\\");
 		gURLCeil.setColumns(10);
 
 		gBtnSelectCeil = new JButton("...");
@@ -378,7 +422,7 @@ public class Window extends JFrame {
 		JLabel lblNewLabel_2 = new JLabel("合成保存至");
 
 		gURLMap = new JTextField();
-		gURLMap.setText("D:\\wssj\\地图\\");
+		gURLMap.setText("D:\\wssb\\地图\\");
 		gURLMap.setColumns(10);
 
 		gBtnSelectPiece = new JButton("...");
@@ -508,9 +552,9 @@ public class Window extends JFrame {
 																																				ComponentPlacement.RELATED)
 																																		.addComponent(
 																																				gTxtSplitSign,
-																																				0,
-																																				55,
-																																				Short.MAX_VALUE)))
+																																				GroupLayout.PREFERRED_SIZE,
+																																				52,
+																																				GroupLayout.PREFERRED_SIZE)))
 																										.addGap(150)
 																										.addGroup(
 																												gl_contentPane
