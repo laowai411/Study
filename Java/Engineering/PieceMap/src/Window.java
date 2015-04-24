@@ -157,8 +157,18 @@ public class Window extends JFrame {
 				// 合成
 				if (ceilFileList.size() < 1) {
 					loadTimer.stop();
-					map = new BufferedImage(mapWidth, mapHeigth,
-							BufferedImage.TYPE_3BYTE_BGR);
+					System.out.println("宽度，高度："+mapWidth+", "+mapHeigth);
+					try
+					{
+						map = new BufferedImage(mapWidth, mapHeigth,
+								BufferedImage.TYPE_3BYTE_BGR);
+					}
+					catch(java.lang.OutOfMemoryError error)
+					{
+						JOptionPane.showMessageDialog(null, "内存不足！请先关闭无用的程序");
+						stop(false);
+						return;
+					}
 					copyPixes();
 				}
 			}
@@ -211,11 +221,13 @@ public class Window extends JFrame {
 		if (checkCeilPath() == false) {
 			this.setEnable(true);
 			JOptionPane.showMessageDialog(null, "地图块路径错误!");
+			stop(false);
 			return;
 		}
 		if (checkSavePath() == false) {
 			this.setEnable(true);
 			JOptionPane.showMessageDialog(null, "保存路径错误");
+			stop(false);
 			return;
 		}
 		fixURL();
@@ -297,7 +309,16 @@ public class Window extends JFrame {
 				int row = 0;
 				int col = 0;
 				if (gRadioCol.isSelected()) {
-					col = Integer.parseInt(inds[0]);
+					try
+					{
+						col = Integer.parseInt(inds[0]);
+					}
+					catch(Error error)
+					{
+						JOptionPane.showMessageDialog(null, "请检查前缀和分隔符是否正确!");
+						stop(false);
+						return;
+					}
 					row = Integer.parseInt(inds[1]);
 				} else {
 					col = Integer.parseInt(inds[1]);
@@ -346,9 +367,24 @@ public class Window extends JFrame {
 		}
 		try {
 			ImageIO.write(map, "jpeg", file);
-			JOptionPane.showMessageDialog(null, "创建大地图成功!");
+			stop(true);
 		} catch (IOException e) {
 			e.printStackTrace();
+			stop(false);
+		}
+	}
+	
+	/**
+	 * 停止程序
+	 * */
+	private void stop(Boolean success)
+	{
+		if(success == true)
+		{
+			JOptionPane.showMessageDialog(null, "创建大地图成功!");
+		}
+		else
+		{
 			JOptionPane.showMessageDialog(null, "创建大地图失败!");
 		}
 		showMsg("合并结束");
