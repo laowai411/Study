@@ -28,6 +28,11 @@ public class ExcelParser {
 	 * excel读取的信息
 	 * */
 	private static ArrayList<ExcelInfoVo> gStudentList = new ArrayList<ExcelInfoVo>();
+	
+	/**
+	 * excel信息总条数
+	 * */
+	public static int totalCount;
 
 	public static ExcelInfoVo getLastExcelInfoVo() {
 		synchronized (gStudentList) {
@@ -39,6 +44,9 @@ public class ExcelParser {
 		}
 	}
 
+	/**
+	 * 剩余excel配置条目
+	 * */
 	public static int getOddExcelInfoVoCount() {
 		return gStudentList.size();
 	}
@@ -62,6 +70,7 @@ public class ExcelParser {
 		} else {
 			read07_13(gStudentList, excelURL);
 		}
+		totalCount = gStudentList.size();
 	}
 
 	/**
@@ -117,6 +126,9 @@ public class ExcelParser {
 		fis.close();
 	}
 
+	/**
+	 * 检测某条数据是否为无效值
+	 * */
 	private boolean checkValue(ArrayList<String> valueList) {
 		for (int i = 0; i < 10; i++) {
 			if (valueList.get(i) == null

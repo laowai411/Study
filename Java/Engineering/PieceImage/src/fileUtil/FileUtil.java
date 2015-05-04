@@ -12,6 +12,9 @@ import java.io.File;
  */
 public class FileUtil {
 
+	/**
+	 * 检测是否为一个目录
+	 * */
 	public static boolean checkIsDir(String cusURL) {
 		File file = new File(cusURL);
 		if (file == null || file.exists() == false
@@ -21,6 +24,9 @@ public class FileUtil {
 		return true;
 	}
 
+	/**
+	 * 检测是否为一个excel
+	 * */
 	public static boolean checkIsExcel(String cusURL) {
 		File file = new File(cusURL);
 		if (file == null || file.exists() == false || file.isFile() == false
@@ -34,6 +40,9 @@ public class FileUtil {
 		return true;
 	}
 
+	/**
+	 * 获取文件后缀名
+	 * */
 	public static String getExtensionName(String filename) {
 		if ((filename != null) && (filename.length() > 0)) {
 			int dot = filename.lastIndexOf('.');
@@ -44,6 +53,9 @@ public class FileUtil {
 		return filename;
 	}
 
+	/**
+	 * 检测是否为一个jpg或者png图片
+	 * */
 	public static boolean checkIsImage(String cusURL) {
 		File file = new File(cusURL);
 		if (file == null || file.exists() == false || file.isFile() == false

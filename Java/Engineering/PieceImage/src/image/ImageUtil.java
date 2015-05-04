@@ -11,6 +11,10 @@ import java.io.IOException;
 
 public class ImageUtil {
 
+	
+	/**
+	 * 缩放
+	 * */
 	public static BufferedImage scaleImg(BufferedImage image, int w, int h,
 			Color bgColor) throws IOException {
 		Image scaleInstance = image.getScaledInstance(w, h, Image.SCALE_SMOOTH);
@@ -19,9 +23,13 @@ public class ImageUtil {
 		graphics.setColor(bgColor);
 		graphics.fillRect(0, 0, w, h);
 		graphics.drawImage(scaleInstance, 0, 0, null);
+		graphics.dispose();
 		return scaleImage;
 	}
 
+	/**
+	 * 旋转
+	 * */
 	public static BufferedImage rotateImg(BufferedImage image, int degree,
 			Color bgcolor) throws IOException {
 
@@ -69,6 +77,7 @@ public class ImageUtil {
 				AffineTransformOp.TYPE_BICUBIC);
 		rotatedImage.getGraphics().setColor(bgcolor);
 		op.filter(image, rotatedImage);
+		gs.dispose();
 		return rotatedImage;
 	}
 }
