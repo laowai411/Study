@@ -12,6 +12,5 @@
 	<classpathentry kind="lib" path="lib/lib/commons-logging-1.1.3.jar"/>
 	<classpathentry kind="lib" path="lib/lib/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/lib/log4j-1.2.17.jar"/>
-	<classpathentry kind="lib" path="lib/ooxml-lib/xmlbeans-2.6.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

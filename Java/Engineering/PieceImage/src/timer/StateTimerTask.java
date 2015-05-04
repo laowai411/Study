@@ -4,7 +4,6 @@ import global.Global;
 import global.Logger;
 import image.ImageCreater;
 
-import java.util.Date;
 import java.util.TimerTask;
 
 import javax.swing.JOptionPane;

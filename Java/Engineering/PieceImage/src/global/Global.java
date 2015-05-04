@@ -38,7 +38,7 @@ public class Global {
 			state = cusState;
 		}
 	}
-	
+
 	/**
 	 * 开始时间
 	 * */
@@ -71,7 +71,7 @@ public class Global {
 	public static Collection<String> getErrorList() {
 		return error_src_list.values();
 	}
-	
+
 	/**
 	 * 本次处理照片总数量
 	 * */

@@ -153,13 +153,10 @@ public class ImageCreater extends Thread {
 	}
 
 	public void run() {
-		double percent = ((Global.totalCount - ExcelParser.getOddExcelInfoVoCount())
-				/ Global.totalCount) * 0.9;
-		Logger.showProgress((int)(10 + percent*100));
+		double percent = ((Global.totalCount - ExcelParser
+				.getOddExcelInfoVoCount()) / Global.totalCount) * 0.9;
+		Logger.showProgress((int) (10 + percent * 100));
 		Logger.showStateMsg("剩余" + (ExcelParser.getOddExcelInfoVoCount()));
-		if (excelInfoVo == null || excelInfoVo.image_url == null) {
-			System.out.println("null");
-		}
 		File file = new File(excelInfoVo.image_url);
 		BufferedImage image = null;
 		try {
@@ -190,7 +187,8 @@ public class ImageCreater extends Thread {
 		}
 		File oldFile = new File(excelInfoVo.image_url);
 		String oldURL = oldFile.getAbsolutePath();
-		File newImage = new File(oldURL.substring(0, oldURL.lastIndexOf("."))+" 副本.jpg");
+		File newImage = new File(oldURL.substring(0, oldURL.lastIndexOf("."))
+				+ " 副本.jpg");
 		try {
 			ImageIO.write(pieceImage, "jpeg", newImage);
 		} catch (IOException e) {
