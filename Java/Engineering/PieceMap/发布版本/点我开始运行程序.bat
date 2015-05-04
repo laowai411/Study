@@ -1,1 +1,0 @@
-classpath.bat JDK6
