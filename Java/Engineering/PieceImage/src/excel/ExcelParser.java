@@ -18,6 +18,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import fileUtil.FileUtil;
+import global.Global;
 
 /**
  * excel解析器
@@ -29,11 +30,6 @@ public class ExcelParser {
 	 * */
 	private static ArrayList<ExcelInfoVo> gStudentList = new ArrayList<ExcelInfoVo>();
 	
-	/**
-	 * excel信息总条数
-	 * */
-	public static int totalCount;
-
 	public static ExcelInfoVo getLastExcelInfoVo() {
 		synchronized (gStudentList) {
 			int len = gStudentList.size();
@@ -70,7 +66,7 @@ public class ExcelParser {
 		} else {
 			read07_13(gStudentList, excelURL);
 		}
-		totalCount = gStudentList.size();
+		Global.totalCount = gStudentList.size();
 	}
 
 	/**
@@ -130,7 +126,7 @@ public class ExcelParser {
 	 * 检测某条数据是否为无效值
 	 * */
 	private boolean checkValue(ArrayList<String> valueList) {
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 9; i++) {
 			if (valueList.get(i) == null
 					|| valueList.get(i).trim().length() < 1) {
 				return false;

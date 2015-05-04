@@ -1,6 +1,7 @@
 package timer;
 
 import global.Global;
+import global.Logger;
 import image.ImageCreater;
 
 import java.util.Date;
@@ -18,17 +19,17 @@ public class StateTimerTask extends TimerTask {
 		if (Global.getState() == Global.STATE_ERROR) {
 			cancel();
             ImageCreater.stopAll();
-            System.out.println(new Date().toString());
             Global.setEnable(true);
             JOptionPane.showMessageDialog(null, "合成失败");
+            Logger.endReport();
         }
         else if(Global.getState() == Global.STATE_SUCCESS)
         {
         	cancel();
             ImageCreater.stopAll();
-            System.out.println(new Date().toString());
             Global.setEnable(true);
             JOptionPane.showMessageDialog(null, "合成结束");
+            Logger.endReport();
         }
 	}
 

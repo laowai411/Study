@@ -1,5 +1,7 @@
 package excel;
 
+import global.Global;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Queue;
@@ -69,7 +71,7 @@ public class ExcelInfoVo {
 		school_type = list.get(6);
 		school_No = list.get(7);
 		school_name = list.get(8);
-		image_url = list.get(9);
+		image_url = Global.srcImageURL+"\\IMG_"+index+".jpg";
 	}
 	
 	public void reset()

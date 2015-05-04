@@ -4,10 +4,12 @@ import excel.ExcelInfoVo;
 import excel.ExcelParser;
 import fileUtil.FileUtil;
 import global.Global;
+import global.Logger;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -41,19 +43,24 @@ public class ImageCreater extends Thread {
 	/**
 	 * 开始启动至多10个线程进行处理
 	 * */
-	public static void startThread() {
+	public static synchronized void startThread() {
 		synchronized (useMap) {
 			if (Global.getState() == Global.STATE_ERROR
 					|| Global.getState() == Global.STATE_SUCCESS) {
 				return;
 			}
-			for(int i=0; i<10; i++)
-			{
+			for (int i = 0; i < 10; i++) {
 				if (instanceCount >= 10) {
 					return;
 				}
 				ExcelInfoVo excelInfoVo = ExcelParser.getLastExcelInfoVo();
 				if (excelInfoVo != null) {
+					if (FileUtil.checkIsImage(excelInfoVo.image_url) == false) {
+						Global.addErrorSrcImage(excelInfoVo.index,
+								excelInfoVo.image_url);
+						i--;
+						continue;
+					}
 					ImageCreater creater = new ImageCreater();
 					id++;
 					creater.init(excelInfoVo, id + "");
@@ -61,7 +68,12 @@ public class ImageCreater extends Thread {
 					useMap.put(id + "", creater);
 					instanceCount++;
 					System.out.println(Calendar.getInstance().getTimeInMillis()
-							+ "  启动线程" + id+"  当前共有线程数："+instanceCount);
+							+ "  启动线程" + id + "  当前共有线程数：" + instanceCount);
+				} else {
+					Global.setState(Global.STATE_SUCCESS);
+					stopAll();
+					Logger.showProgress(100);
+					Logger.showStateMsg("结束");
 				}
 			}
 		}
@@ -70,16 +82,19 @@ public class ImageCreater extends Thread {
 	/**
 	 * 停止所有线程
 	 * */
-	public static void stopAll() {
-		if (useMap.size() > 0) {
-			Iterator<ImageCreater> ite = useMap.values().iterator();
-			while (ite.hasNext()) {
-				ImageCreater creater = ite.next();
-				creater.stopSelf();
-				creater = null;
+	public static synchronized void stopAll() {
+		synchronized (useMap) {
+			if (useMap.size() > 0) {
+				Iterator<ImageCreater> ite = useMap.values().iterator();
+				while (ite.hasNext()) {
+					ImageCreater creater = ite.next();
+					creater.stopSelfNoRemove();
+					creater = null;
+					ite.remove();
+				}
 			}
+			instanceCount = 0;
 		}
-		instanceCount = 0;
 	}
 
 	/**
@@ -116,6 +131,16 @@ public class ImageCreater extends Thread {
 		ImageCreater.startThread();
 	}
 
+	private void stopSelfNoRemove() {
+		interrupt();
+		if (checkEnd()) {
+			return;
+		}
+		instanceCount--;
+		System.out.println(gId + " 线程停止");
+		ImageCreater.startThread();
+	}
+
 	/**
 	 * excel读取到的数据是否已经处理完了
 	 * */
@@ -128,17 +153,14 @@ public class ImageCreater extends Thread {
 	}
 
 	public void run() {
+		double percent = ((Global.totalCount - ExcelParser.getOddExcelInfoVoCount())
+				/ Global.totalCount) * 0.9;
+		Logger.showProgress((int)(10 + percent*100));
+		Logger.showStateMsg("剩余" + (ExcelParser.getOddExcelInfoVoCount()));
 		if (excelInfoVo == null || excelInfoVo.image_url == null) {
 			System.out.println("null");
 		}
 		File file = new File(excelInfoVo.image_url);
-		if (FileUtil.checkIsImage(excelInfoVo.image_url) == false) {
-			JOptionPane.showMessageDialog(null, excelInfoVo.name
-					+ " 的照片路径错误或者格式不正确");
-			this.stopSelf();
-			Global.setState(Global.STATE_ERROR);
-			return;
-		}
 		BufferedImage image = null;
 		try {
 			image = ImageIO.read(file);
@@ -148,7 +170,6 @@ public class ImageCreater extends Thread {
 			ioE.printStackTrace();
 			JOptionPane.showMessageDialog(null, "读取原始照片失败");
 			this.stopSelf();
-			Global.setState(Global.STATE_ERROR);
 			return;
 		}
 		try {
@@ -160,28 +181,23 @@ public class ImageCreater extends Thread {
 			e1.printStackTrace();
 			JOptionPane.showMessageDialog(null, "合成照片失败");
 			stopSelf();
-			Global.setState(Global.STATE_ERROR);
 			return;
 		}
 		if (image == null) {
 			JOptionPane.showMessageDialog(null, "合成照片失败");
 			stopSelf();
-			Global.setState(Global.STATE_ERROR);
 			return;
 		}
-		File newImage = new File(new File(excelInfoVo.image_url)
-				.getParentFile().getAbsoluteFile()
-				+ "\\"
-				+ excelInfoVo.name
-				+ ".jpg");
+		File oldFile = new File(excelInfoVo.image_url);
+		String oldURL = oldFile.getAbsolutePath();
+		File newImage = new File(oldURL.substring(0, oldURL.lastIndexOf("."))+" 副本.jpg");
 		try {
 			ImageIO.write(pieceImage, "jpeg", newImage);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "写入合成后的图片失败");
 			this.stopSelf();
-			Global.setState(Global.STATE_ERROR);
+			JOptionPane.showMessageDialog(null, "写入合成后的图片失败");
 			return;
 		}
 		this.stopSelf();
@@ -191,11 +207,13 @@ public class ImageCreater extends Thread {
 	 * 绘制大图
 	 * */
 	private void drawImage(BufferedImage image) throws IOException {
-		//背景设置为白色
+		// 背景设置为白色
 		Graphics2D graphics = pieceImage.createGraphics();
 		graphics.setBackground(Color.WHITE);
-		graphics.setPaint(Color.BLACK);
 		graphics.clearRect(0, 0, pieceImage.getWidth(), pieceImage.getHeight());
+		// 画笔设置为黑色
+		graphics.setColor(Color.BLACK);
+		// 小照片(由原始照片缩放)
 		BufferedImage scaleImage = null;
 		scaleImage = ImageUtil.scaleImg(image, 296, 420, Color.BLACK);
 		int w = scaleImage.getWidth();
@@ -209,6 +227,7 @@ public class ImageCreater extends Thread {
 			tempY = startY + ((int) (Math.ceil(i / 4))) * (h + 2);
 			graphics.drawImage(scaleImage, tempX, tempY, null);
 		}
+		// 大照片(由原始照片缩放再旋转)
 		scaleImage = ImageUtil.scaleImg(image, 372, 546, Color.BLACK);
 		BufferedImage rotaImage = null;
 		rotaImage = ImageUtil.rotateImg(scaleImage, 90, null);
@@ -223,7 +242,28 @@ public class ImageCreater extends Thread {
 			tempY = startY + ((int) (Math.ceil(i / 2))) * (h + 2);
 			graphics.drawImage(rotaImage, tempX, tempY, null);
 		}
+		// 文字
+		drawString(graphics);
+		graphics.dispose();
+	}
+
+	/**
+	 * Graphics渲染字符串
+	 * */
+	private void drawString(Graphics2D graphics) {
 		Font font = new Font("黑体", Font.BOLD, 40);
+		if (font.canDisplay('a') == false) {
+			GraphicsEnvironment ge = GraphicsEnvironment
+					.getLocalGraphicsEnvironment();
+			String fontName[] = ge.getAvailableFontFamilyNames();
+			font = Font.getFont(fontName[0]);
+			if (font == null) {
+				JOptionPane.showMessageDialog(null, "无法获取计算机的字体库");
+				ImageCreater.stopAll();
+				Global.setState(Global.STATE_ERROR);
+				return;
+			}
+		}
 		if (font.canDisplay('a') == true) {
 			graphics.setFont(font);
 			graphics.drawString(excelInfoVo.school_name, 66, 1651);
@@ -231,7 +271,12 @@ public class ImageCreater extends Thread {
 			graphics.drawString(excelInfoVo.stu_id + "  "
 					+ excelInfoVo.school_No, 673, 1656);
 			graphics.drawString(excelInfoVo.id, 710, 1728);
+			graphics.setColor(new Color(41, 97, 234));
+			graphics.drawString("贵州高校信息采集组制作", 720, 1770);
+		} else {
+			JOptionPane.showMessageDialog(null, "无法获取计算机的字体库");
+			ImageCreater.stopAll();
+			Global.setState(Global.STATE_ERROR);
 		}
-		graphics.dispose();
 	}
 }
