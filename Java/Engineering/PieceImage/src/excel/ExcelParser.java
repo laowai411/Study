@@ -126,6 +126,11 @@ public class ExcelParser {
 	 * 检测某条数据是否为无效值
 	 * */
 	private boolean checkValue(ArrayList<String> valueList) {
+		int len = valueList != null ? valueList.size() : 0;
+		if(len < 8)
+		{
+			return false;
+		}
 		for (int i = 0; i < 9; i++) {
 			if (valueList.get(i) == null
 					|| valueList.get(i).trim().length() < 1) {
@@ -166,8 +171,11 @@ public class ExcelParser {
 												cell.getNumericCellValue(), 0,
 												"yyyy-MM-dd HH:mm:ss");
 							} else {
-								cellValue = String.valueOf(cell
-										.getNumericCellValue());
+								//数值型去小数处理
+//								cellValue = String.valueOf(cell
+//										.getNumericCellValue());
+								long longValue = Math.round(cell.getNumericCellValue());
+								cellValue = longValue + "";
 							}
 						} else {
 							cellValue = cell.toString();

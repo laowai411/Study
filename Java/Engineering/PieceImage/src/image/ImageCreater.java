@@ -43,7 +43,7 @@ public class ImageCreater extends Thread {
 	/**
 	 * 开始启动至多10个线程进行处理
 	 * */
-	public static synchronized void startThread() {
+	public static void startThread() {
 		synchronized (useMap) {
 			if (Global.getState() == Global.STATE_ERROR
 					|| Global.getState() == Global.STATE_SUCCESS) {
@@ -82,7 +82,7 @@ public class ImageCreater extends Thread {
 	/**
 	 * 停止所有线程
 	 * */
-	public static synchronized void stopAll() {
+	public static void stopAll() {
 		synchronized (useMap) {
 			if (useMap.size() > 0) {
 				Iterator<ImageCreater> ite = useMap.values().iterator();
@@ -186,9 +186,8 @@ public class ImageCreater extends Thread {
 			return;
 		}
 		File oldFile = new File(excelInfoVo.image_url);
-		String oldURL = oldFile.getAbsolutePath();
-		File newImage = new File(oldURL.substring(0, oldURL.lastIndexOf("."))
-				+ " 副本.jpg");
+		String targetUrl = Global.targetImageURL + oldFile.getName();
+		File newImage = new File(targetUrl);
 		try {
 			ImageIO.write(pieceImage, "jpeg", newImage);
 		} catch (IOException e) {
@@ -221,8 +220,8 @@ public class ImageCreater extends Thread {
 		int tempX = startX;
 		int tempY = startY;
 		for (int i = 0; i < 8; i++) {
-			tempX = startX + ((i % 4) * (w + 2));
-			tempY = startY + ((int) (Math.ceil(i / 4))) * (h + 2);
+			tempX = startX + ((i % 4) * w);
+			tempY = startY + ((int) (Math.ceil(i / 4))) * h;
 			graphics.drawImage(scaleImage, tempX, tempY, null);
 		}
 		// 大照片(由原始照片缩放再旋转)
@@ -230,14 +229,14 @@ public class ImageCreater extends Thread {
 		BufferedImage rotaImage = null;
 		rotaImage = ImageUtil.rotateImg(scaleImage, 90, null);
 		startX = 6;
-		startY = 857;
+		startY = 851;
 		w = rotaImage.getWidth();
 		h = rotaImage.getHeight();
 		tempX = startX;
 		tempY = startY;
 		for (int i = 0; i < 4; i++) {
 			tempX = startX + ((i % 2) * (w + 92));
-			tempY = startY + ((int) (Math.ceil(i / 2))) * (h + 2);
+			tempY = startY + ((int) (Math.ceil(i / 2))) * h;
 			graphics.drawImage(rotaImage, tempX, tempY, null);
 		}
 		// 文字
@@ -249,7 +248,7 @@ public class ImageCreater extends Thread {
 	 * Graphics渲染字符串
 	 * */
 	private void drawString(Graphics2D graphics) {
-		Font font = new Font("黑体", Font.BOLD, 40);
+		Font font = new Font("宋体", Font.BOLD, 40);
 		if (font.canDisplay('a') == false) {
 			GraphicsEnvironment ge = GraphicsEnvironment
 					.getLocalGraphicsEnvironment();
@@ -267,10 +266,10 @@ public class ImageCreater extends Thread {
 			graphics.drawString(excelInfoVo.school_name, 66, 1651);
 			graphics.drawString(excelInfoVo.name, 66, 1726);
 			graphics.drawString(excelInfoVo.stu_id + "  "
-					+ excelInfoVo.school_No, 673, 1656);
-			graphics.drawString(excelInfoVo.id, 710, 1728);
+					+ excelInfoVo.school_No, 673, 1645);
+			graphics.drawString(excelInfoVo.id, 710, 1690);
 			graphics.setColor(new Color(41, 97, 234));
-			graphics.drawString("贵州高校信息采集组制作", 720, 1770);
+			graphics.drawString("贵州高校信息采集组制作", 720, 1740);
 		} else {
 			JOptionPane.showMessageDialog(null, "无法获取计算机的字体库");
 			ImageCreater.stopAll();

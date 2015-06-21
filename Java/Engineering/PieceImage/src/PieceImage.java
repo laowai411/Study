@@ -1,11 +1,28 @@
 import image.ImageCreater;
+import image.ImageRenamer;
 
+import java.awt.Component;
+import java.awt.Dialog.ModalExclusionType;
+import java.awt.Font;
+import java.awt.SystemColor;
 import java.io.File;
 import java.util.Date;
 import java.util.Timer;
 
+import javax.swing.ButtonGroup;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import timer.StateTimerTask;
 import excel.ExcelParser;
@@ -13,6 +30,7 @@ import fileUtil.DirectoriesFilter;
 import fileUtil.ExcelFilter;
 import fileUtil.FileUtil;
 import global.Global;
+import java.awt.Window.Type;
 
 /*
  * To change this template, choose Tools | Templates
@@ -39,7 +57,17 @@ public class PieceImage extends javax.swing.JFrame {
 	 * Creates new form PieceImage
 	 */
 	public PieceImage() {
+		setForeground(SystemColor.inactiveCaptionBorder);
+		setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		setType(Type.UTILITY);
+		setResizable(false);
+		setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
+		getContentPane().setBackground(SystemColor.inactiveCaptionBorder);
+		setBackground(SystemColor.inactiveCaptionBorder);
+
 		initComponents();
+
+		changeStateByRadio();
 	}
 
 	/**
@@ -54,15 +82,33 @@ public class PieceImage extends javax.swing.JFrame {
 	private void initComponents() {
 
 		jLabel1 = new javax.swing.JLabel();
+		jLabel1.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		jLabel1.setBackground(SystemColor.inactiveCaptionBorder);
 		gTxtExcel = new javax.swing.JTextField();
+		gTxtExcel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
 		gBtnExcel = new javax.swing.JButton();
+		gBtnExcel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gBtnExcel.setBackground(SystemColor.inactiveCaptionBorder);
 		jLabel2 = new javax.swing.JLabel();
+		jLabel2.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		jLabel2.setBackground(SystemColor.inactiveCaptionBorder);
 		gTxtSrcImage = new javax.swing.JTextField();
+		gTxtSrcImage.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gTxtSrcImage.setColumns(10);
 		gBtnSrcImage = new javax.swing.JButton();
+		gBtnSrcImage.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gBtnSrcImage.setBackground(SystemColor.inactiveCaptionBorder);
 		jLabel3 = new javax.swing.JLabel();
+		jLabel3.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		jLabel3.setBackground(SystemColor.inactiveCaptionBorder);
 		gTxtState = new javax.swing.JTextField();
+		gTxtState.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gTxtState.setBackground(SystemColor.inactiveCaptionBorder);
 		gStateBar = new javax.swing.JProgressBar();
+		gStateBar.setBackground(SystemColor.inactiveCaptionBorder);
 		gBtnPiece = new javax.swing.JButton();
+		gBtnPiece.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gBtnPiece.setBackground(SystemColor.inactiveCaptionBorder);
 
 		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		setTitle("照片合成 v1.0 beta");
@@ -72,8 +118,9 @@ public class PieceImage extends javax.swing.JFrame {
 
 		jLabel1.setText("照片信息excel");
 
-		gTxtExcel.setBackground(new java.awt.Color(204, 204, 204));
-		gTxtExcel.setText("C:\\Users\\AngryPotato\\Desktop\\高校18人\\高校18人\\原图\\4.24-18.xls");
+		gTxtExcel.setBackground(SystemColor.inactiveCaptionBorder);
+		gTxtExcel
+				.setText("C:\\Users\\AngryPotato\\Desktop\\长安大学（贵阳公路学校办学点）2013年5月9日照未过成高10人\\1.xlsx");
 		gTxtExcel.setToolTipText("");
 
 		gBtnExcel.setText("选择...");
@@ -85,8 +132,9 @@ public class PieceImage extends javax.swing.JFrame {
 
 		jLabel2.setText("原始照片目录");
 
-		gTxtSrcImage.setBackground(new java.awt.Color(204, 204, 204));
-		gTxtSrcImage.setText("C:\\Users\\AngryPotato\\Desktop\\高校18人\\高校18人\\原图");
+		gTxtSrcImage.setBackground(SystemColor.inactiveCaptionBorder);
+		gTxtSrcImage
+				.setText("C:\\Users\\AngryPotato\\Desktop\\长安大学（贵阳公路学校办学点）2013年5月9日照未过成高10人\\1\\");
 
 		gBtnSrcImage.setText("选择...");
 		gBtnSrcImage.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -107,133 +155,224 @@ public class PieceImage extends javax.swing.JFrame {
 			}
 		});
 
+		gRadioPiece = new JRadioButton("合成照片");
+		gRadioPiece.setSelected(true);
+		gRadioPiece.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				changeStateByRadio();
+			}
+		});
+		gRadioPiece.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		menuGroup.add(gRadioPiece);
+
+		JRadioButton gRadioRename = new JRadioButton("原始照片重命名");
+		gRadioRename.setSelected(true);
+		gRadioRename.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		menuGroup.add(gRadioRename);
+
+		panel = new JPanel();
+		panel.setBackground(SystemColor.inactiveCaptionBorder);
+
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
 				getContentPane());
-		getContentPane().setLayout(layout);
 		layout.setHorizontalGroup(layout
-				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+				.createParallelGroup(Alignment.TRAILING)
 				.addGroup(
-						javax.swing.GroupLayout.Alignment.TRAILING,
-						layout.createSequentialGroup().addGap(254, 254, 254)
-								.addComponent(gBtnPiece)
-								.addContainerGap(259, Short.MAX_VALUE))
+						layout.createSequentialGroup().addGap(6)
+								.addComponent(gRadioPiece)
+								.addPreferredGap(ComponentPlacement.UNRELATED)
+								.addComponent(gRadioRename)
+								.addContainerGap(454, Short.MAX_VALUE))
 				.addGroup(
 						layout.createSequentialGroup()
-								.addGap(30, 30, 30)
+								.addGap(54)
+								.addComponent(gStateBar,
+										GroupLayout.DEFAULT_SIZE, 542,
+										Short.MAX_VALUE).addGap(48))
+				.addGroup(
+						layout.createSequentialGroup()
+								.addContainerGap(71, Short.MAX_VALUE)
 								.addGroup(
 										layout.createParallelGroup(
-												javax.swing.GroupLayout.Alignment.LEADING)
-												.addGroup(
-														layout.createSequentialGroup()
-																.addComponent(
-																		jLabel3)
-																.addContainerGap(
-																		492,
-																		Short.MAX_VALUE))
+												Alignment.TRAILING, false)
+												.addComponent(panel,
+														Alignment.LEADING, 0,
+														0, Short.MAX_VALUE)
 												.addGroup(
 														layout.createSequentialGroup()
 																.addGroup(
 																		layout.createParallelGroup(
-																				javax.swing.GroupLayout.Alignment.TRAILING)
+																				Alignment.LEADING)
 																				.addComponent(
-																						gStateBar,
-																						javax.swing.GroupLayout.Alignment.LEADING,
-																						javax.swing.GroupLayout.DEFAULT_SIZE,
-																						510,
-																						Short.MAX_VALUE)
-																				.addGroup(
-																						javax.swing.GroupLayout.Alignment.LEADING,
-																						layout.createSequentialGroup()
-																								.addGroup(
-																										layout.createParallelGroup(
-																												javax.swing.GroupLayout.Alignment.LEADING)
-																												.addGroup(
-																														layout.createSequentialGroup()
-																																.addComponent(
-																																		jLabel2)
-																																.addPreferredGap(
-																																		javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-																																.addComponent(
-																																		gTxtSrcImage,
-																																		javax.swing.GroupLayout.DEFAULT_SIZE,
-																																		335,
-																																		Short.MAX_VALUE))
-																												.addGroup(
-																														layout.createSequentialGroup()
-																																.addComponent(
-																																		jLabel1)
-																																.addPreferredGap(
-																																		javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-																																.addComponent(
-																																		gTxtExcel,
-																																		javax.swing.GroupLayout.DEFAULT_SIZE,
-																																		329,
-																																		Short.MAX_VALUE)))
-																								.addGap(18,
-																										18,
-																										18)
-																								.addGroup(
-																										layout.createParallelGroup(
-																												javax.swing.GroupLayout.Alignment.LEADING)
-																												.addComponent(
-																														gBtnExcel)
-																												.addComponent(
-																														gBtnSrcImage)))
-																				.addGroup(
-																						layout.createSequentialGroup()
-																								.addGap(0,
-																										74,
-																										Short.MAX_VALUE)
-																								.addComponent(
-																										gTxtState,
-																										javax.swing.GroupLayout.PREFERRED_SIZE,
-																										436,
-																										javax.swing.GroupLayout.PREFERRED_SIZE)))
-																.addGap(30, 30,
-																		30)))));
+																						jLabel3)
+																				.addComponent(
+																						jLabel2)
+																				.addComponent(
+																						jLabel1))
+																.addPreferredGap(
+																		ComponentPlacement.RELATED)
+																.addGroup(
+																		layout.createParallelGroup(
+																				Alignment.LEADING,
+																				false)
+																				.addComponent(
+																						gTxtState,
+																						GroupLayout.PREFERRED_SIZE,
+																						GroupLayout.DEFAULT_SIZE,
+																						GroupLayout.PREFERRED_SIZE)
+																				.addComponent(
+																						gTxtSrcImage,
+																						GroupLayout.PREFERRED_SIZE,
+																						349,
+																						GroupLayout.PREFERRED_SIZE)
+																				.addComponent(
+																						gTxtExcel,
+																						GroupLayout.PREFERRED_SIZE,
+																						349,
+																						GroupLayout.PREFERRED_SIZE))
+																.addGap(30)
+																.addGroup(
+																		layout.createParallelGroup(
+																				Alignment.TRAILING)
+																				.addComponent(
+																						gBtnExcel)
+																				.addComponent(
+																						gBtnSrcImage))))
+								.addGap(48))
+				.addGroup(
+						Alignment.LEADING,
+						layout.createSequentialGroup().addGap(288)
+								.addComponent(gBtnPiece)
+								.addContainerGap(299, Short.MAX_VALUE)));
 		layout.setVerticalGroup(layout
-				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+				.createParallelGroup(Alignment.LEADING)
 				.addGroup(
 						layout.createSequentialGroup()
-								.addGap(37, 37, 37)
 								.addGroup(
 										layout.createParallelGroup(
-												javax.swing.GroupLayout.Alignment.BASELINE)
-												.addComponent(jLabel1)
-												.addComponent(
-														gTxtExcel,
-														javax.swing.GroupLayout.PREFERRED_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.PREFERRED_SIZE)
+												Alignment.BASELINE)
+												.addComponent(gRadioPiece)
+												.addComponent(gRadioRename))
+								.addGap(17)
+								.addGroup(
+										layout.createParallelGroup(
+												Alignment.TRAILING)
+												.addGroup(
+														layout.createParallelGroup(
+																Alignment.BASELINE)
+																.addComponent(
+																		gTxtExcel,
+																		GroupLayout.PREFERRED_SIZE,
+																		GroupLayout.DEFAULT_SIZE,
+																		GroupLayout.PREFERRED_SIZE)
+																.addComponent(
+																		jLabel1))
 												.addComponent(gBtnExcel))
-								.addGap(28, 28, 28)
+								.addGap(18)
 								.addGroup(
 										layout.createParallelGroup(
-												javax.swing.GroupLayout.Alignment.BASELINE)
-												.addComponent(jLabel2)
+												Alignment.LEADING)
+												.addComponent(jLabel2,
+														Alignment.TRAILING)
 												.addComponent(
 														gTxtSrcImage,
-														javax.swing.GroupLayout.PREFERRED_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.PREFERRED_SIZE)
-												.addComponent(gBtnSrcImage))
-								.addGap(38, 38, 38)
+														Alignment.TRAILING,
+														GroupLayout.PREFERRED_SIZE,
+														GroupLayout.DEFAULT_SIZE,
+														GroupLayout.PREFERRED_SIZE)
+												.addComponent(gBtnSrcImage,
+														Alignment.TRAILING))
+								.addPreferredGap(ComponentPlacement.UNRELATED)
+								.addComponent(panel,
+										GroupLayout.PREFERRED_SIZE, 41,
+										GroupLayout.PREFERRED_SIZE)
+								.addPreferredGap(ComponentPlacement.RELATED)
 								.addGroup(
 										layout.createParallelGroup(
-												javax.swing.GroupLayout.Alignment.BASELINE)
+												Alignment.BASELINE)
 												.addComponent(jLabel3)
 												.addComponent(
 														gTxtState,
-														javax.swing.GroupLayout.PREFERRED_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.PREFERRED_SIZE))
-								.addGap(18, 18, 18)
+														GroupLayout.PREFERRED_SIZE,
+														GroupLayout.DEFAULT_SIZE,
+														GroupLayout.PREFERRED_SIZE))
+								.addGap(18)
 								.addComponent(gStateBar,
-										javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE,
-										javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addGap(18, 18, 18).addComponent(gBtnPiece)
-								.addContainerGap(18, Short.MAX_VALUE)));
+										GroupLayout.PREFERRED_SIZE,
+										GroupLayout.DEFAULT_SIZE,
+										GroupLayout.PREFERRED_SIZE)
+								.addPreferredGap(ComponentPlacement.UNRELATED)
+								.addComponent(gBtnPiece)
+								.addContainerGap(17, Short.MAX_VALUE)));
+		layout.linkSize(SwingConstants.HORIZONTAL, new Component[] { gBtnExcel,
+				gBtnSrcImage });
+		layout.linkSize(SwingConstants.HORIZONTAL, new Component[] { jLabel1,
+				jLabel2 });
+		layout.linkSize(SwingConstants.HORIZONTAL, new Component[] { gTxtExcel,
+				gTxtSrcImage, gTxtState });
+
+		gLabelTarget = new JLabel("生成图片目录");
+		gLabelTarget.setBounds(0, 11, 72, 17);
+		gLabelTarget.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gLabelTarget.setBackground(SystemColor.inactiveCaptionBorder);
+
+		gBtnTarget = new JButton("选择...");
+		gBtnTarget.setBounds(460, 7, 65, 25);
+		gBtnTarget.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gBtnTarget.setBackground(SystemColor.inactiveCaptionBorder);
+		panel.setLayout(null);
+		panel.add(gLabelTarget);
+		panel.add(gBtnTarget);
+
+		JPanel panel_1 = new JPanel();
+		panel_1.setBackground(SystemColor.inactiveCaptionBorder);
+		panel_1.setBounds(-70, 0, 643, 41);
+		panel.add(panel_1);
+		panel_1.setLayout(null);
+
+		gLabelW = new JLabel("宽度");
+		gLabelW.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		gLabelW.setBounds(156, 15, 54, 15);
+		panel_1.add(gLabelW);
+
+		gTxtW = new JTextField();
+		gTxtW.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		gTxtW.setBounds(185, 12, 66, 21);
+		panel_1.add(gTxtW);
+		gTxtW.setColumns(10);
+
+		gLabelWUnit = new JLabel("px");
+		gLabelWUnit.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		gLabelWUnit.setBounds(251, 15, 54, 15);
+		panel_1.add(gLabelWUnit);
+
+		gLabelH = new JLabel("高度");
+		gLabelH.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		gLabelH.setBounds(351, 15, 54, 15);
+		panel_1.add(gLabelH);
+
+		gTxtH = new JTextField();
+		gTxtH.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		gTxtH.setBounds(379, 12, 66, 21);
+		panel_1.add(gTxtH);
+		gTxtH.setColumns(10);
+
+		gLabelHUnit = new JLabel("px");
+		gLabelHUnit.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 12));
+		gLabelHUnit.setBounds(446, 15, 54, 15);
+		panel_1.add(gLabelHUnit);
+
+		gTxtTarget = new JTextField();
+		gTxtTarget.setBounds(150, 12, 350, 23);
+		panel_1.add(gTxtTarget);
+		gTxtTarget
+				.setText("C:\\Users\\AngryPotato\\Desktop\\长安大学（贵阳公路学校办学点）2013年5月9日照未过成高10人\\1_new\\");
+		gTxtTarget.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+		gTxtTarget.setColumns(10);
+		gTxtTarget.setBackground(SystemColor.inactiveCaptionBorder);
+		layout.setAutoCreateContainerGaps(true);
+		layout.setAutoCreateGaps(true);
+		getContentPane().setLayout(layout);
 
 		pack();
 
@@ -245,6 +384,19 @@ public class PieceImage extends javax.swing.JFrame {
 		Global.txtState = gTxtState;
 		Global.stateBar = gStateBar;
 	}// </editor-fold>//GEN-END:initComponents
+
+	private void changeStateByRadio() {
+		gLabelTarget.setVisible(gRadioPiece.isSelected());
+		gTxtTarget.setVisible(gRadioPiece.isSelected());
+		gBtnTarget.setVisible(gRadioPiece.isSelected());
+		gLabelW.setVisible(!gRadioPiece.isSelected());
+		gTxtW.setVisible(!gRadioPiece.isSelected());
+		gLabelWUnit.setVisible(!gRadioPiece.isSelected());
+		gLabelH.setVisible(!gRadioPiece.isSelected());
+		gTxtH.setVisible(!gRadioPiece.isSelected());
+		gLabelHUnit.setVisible(!gRadioPiece.isSelected());
+
+	}
 
 	/**
 	 * 选择excel配置文件按钮被点击
@@ -307,9 +459,13 @@ public class PieceImage extends javax.swing.JFrame {
 			e.printStackTrace();
 			return;
 		}
-		ImageCreater.startThread();
-		timer = new Timer();
-		timer.schedule(new StateTimerTask(), 1000, 500);
+		if (gRadioPiece.isSelected()) {
+			ImageCreater.startThread();
+			timer = new Timer();
+			timer.schedule(new StateTimerTask(), 1000, 500);
+		} else {
+			ImageRenamer.startThread();
+		}
 
 	}// GEN-LAST:event_onBtnPieceMouseClicked
 
@@ -326,7 +482,12 @@ public class PieceImage extends javax.swing.JFrame {
 			JOptionPane.showMessageDialog(null, "原始照片路径错误");
 			return false;
 		}
+		if (FileUtil.checkIsDir(gTxtTarget.getText()) == false) {
+			JOptionPane.showMessageDialog(null, "合成后存放图片目录错误");
+			return false;
+		}
 		Global.srcImageURL = gTxtSrcImage.getText();
+		Global.targetImageURL = gTxtTarget.getText();
 		return true;
 	}
 
@@ -370,7 +531,7 @@ public class PieceImage extends javax.swing.JFrame {
 		/* Create and display the form */
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new PieceImage().setVisible(true);
+				ViewProxy.pieceView.setVisible(true);
 			}
 		});
 	}
@@ -386,5 +547,16 @@ public class PieceImage extends javax.swing.JFrame {
 	private javax.swing.JLabel jLabel2;
 	private javax.swing.JLabel jLabel3;
 	private javax.swing.JProgressBar gStateBar;
-	// End of variables declaration//GEN-END:variables
+	private final ButtonGroup menuGroup = new ButtonGroup();
+	private JRadioButton gRadioPiece;
+	private JPanel panel;
+	private JLabel gLabelTarget;
+	private JButton gBtnTarget;
+	private JLabel gLabelW;
+	private JTextField gTxtW;
+	private JLabel gLabelWUnit;
+	private JLabel gLabelH;
+	private JTextField gTxtH;
+	private JLabel gLabelHUnit;
+	private JTextField gTxtTarget;
 }

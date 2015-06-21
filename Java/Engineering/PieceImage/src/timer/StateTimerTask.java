@@ -8,9 +8,6 @@ import java.util.TimerTask;
 
 import javax.swing.JOptionPane;
 
-/**
- * 主线程的时间回调执行逻辑
- * */
 public class StateTimerTask extends TimerTask {
 
 	@Override

@@ -33,7 +33,7 @@ public class Global {
 	/**
 	 * 程序运行状态标记
 	 * */
-	public static synchronized void setState(String cusState) {
+	public static void setState(String cusState) {
 		synchronized (state) {
 			state = cusState;
 		}
@@ -52,6 +52,10 @@ public class Global {
 	 * 照片原始目录
 	 * */
 	public static String srcImageURL;
+	/**
+	 * 生成图片目录
+	 * */
+	public static String targetImageURL;
 
 	/**
 	 * 路径错误的照片列表
@@ -80,7 +84,7 @@ public class Global {
 	// ///////////////////////////////////////////////////////////////////////////////////////////////////
 	// 界面组件控制相关
 	// /////////////////////////////////////////////////////////////////////////////////////////////////
-
+	
 	/**
 	 * excel路径文本
 	 * */
@@ -102,6 +106,14 @@ public class Global {
 	 * */
 	public static JButton btnPiece;
 	/**
+	 * 生成图片目录选取按钮
+	 * */
+	public static JButton btnTarget;
+	/**
+	 * 生成图片的存放路径文本
+	 * */
+	public static JTextField txtTarget;
+	/**
 	 * 当前状态
 	 * */
 	public static JTextField txtState;
@@ -119,6 +131,8 @@ public class Global {
 		btnExcel.setEnabled(cusEnable);
 		btnSrcImage.setEnabled(cusEnable);
 		btnPiece.setEnabled(cusEnable);
+		btnTarget.setEnabled(cusEnable);
+		txtTarget.setEditable(cusEnable);
 	}
 
 }
