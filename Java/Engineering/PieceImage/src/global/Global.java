@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import javax.swing.JButton;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 public class Global {
@@ -37,6 +38,14 @@ public class Global {
 		synchronized (state) {
 			state = cusState;
 		}
+	}
+	
+	/**
+	 * 是否在运行中
+	 * */
+	public static boolean isRunning()
+	{
+		return state.equals(STATE_LOAD_EXCEL) || state.equals(STATE_PIECE_IMAGE);
 	}
 
 	/**
@@ -102,7 +111,7 @@ public class Global {
 	 * */
 	public static JButton btnSrcImage;
 	/**
-	 * excel路径文本
+	 * 合成按钮
 	 * */
 	public static JButton btnPiece;
 	/**
@@ -121,18 +130,43 @@ public class Global {
 	 * 进度条
 	 * */
 	public static JProgressBar stateBar;
-
+	/**
+	 * 合成单选
+	 * */
+	public static JRadioButton radioPiece;
+	/**
+	 * 重命名单选
+	 * */
+	public static JRadioButton radioRename;
+	/**
+	 * 宽度文本
+	 * */
+	public static JTextField txtW;
+	/**
+	 * 高度文本
+	 * */
+	public static JTextField txtH;
+	/**
+	 * 图片质量
+	 * */
+	public static JTextField txtQua;
+	
 	/**
 	 * 设置界面元件是否可操作
 	 * */
 	public static void setEnable(boolean cusEnable) {
+		btnPiece.setEnabled(cusEnable);
 		txtExcel.setEnabled(cusEnable);
 		txtSrcImage.setEnabled(cusEnable);
 		btnExcel.setEnabled(cusEnable);
 		btnSrcImage.setEnabled(cusEnable);
-		btnPiece.setEnabled(cusEnable);
 		btnTarget.setEnabled(cusEnable);
-		txtTarget.setEditable(cusEnable);
+		txtTarget.setEnabled(cusEnable);
+		radioPiece.setEnabled(cusEnable);
+		radioRename.setEnabled(cusEnable);
+		txtW.setEnabled(cusEnable);
+		txtH.setEnabled(cusEnable);
+		txtQua.setEnabled(cusEnable);
 	}
 
 }

@@ -60,6 +60,10 @@ public class ExcelInfoVo {
 	 * 照片路径
 	 * */
 	public String image_url;
+	/**
+	 * 原始文件名
+	 * */
+	public String src_image_name;
 
 	public void setData(ArrayList<String> list) {
 		index = list.get(0);
@@ -71,7 +75,8 @@ public class ExcelInfoVo {
 		school_type = list.get(6);
 		school_No = list.get(7);
 		school_name = list.get(8);
-		image_url = Global.srcImageURL+"\\IMG_"+index+".jpg";
+		src_image_name = "IMG_"+index + ".jpg";
+		image_url = Global.srcImageURL+"\\"+src_image_name;
 	}
 	
 	public void reset()

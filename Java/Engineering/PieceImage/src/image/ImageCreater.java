@@ -2,7 +2,6 @@ package image;
 
 import excel.ExcelInfoVo;
 import excel.ExcelParser;
-import fileUtil.FileUtil;
 import global.Global;
 import global.Logger;
 
@@ -19,6 +18,11 @@ import java.util.Iterator;
 
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
+
+import com.sun.image.codec.jpeg.ImageFormatException;
+import common.FileUtil;
+import common.FontUtil;
+import common.ImageUtil;
 
 /**
  * 图片合成
@@ -152,6 +156,7 @@ public class ImageCreater extends Thread {
 		return false;
 	}
 
+	@Override
 	public void run() {
 		double percent = ((Global.totalCount - ExcelParser
 				.getOddExcelInfoVoCount()) / Global.totalCount) * 0.9;
@@ -185,13 +190,19 @@ public class ImageCreater extends Thread {
 			stopSelf();
 			return;
 		}
+		ImageUtil.markImageByText(excelInfoVo.src_image_name, pieceImage, null, (20), (pieceImage.getHeight()-30), 0.6f, 40);
 		File oldFile = new File(excelInfoVo.image_url);
 		String targetUrl = Global.targetImageURL + oldFile.getName();
-		File newImage = new File(targetUrl);
 		try {
-			ImageIO.write(pieceImage, "jpeg", newImage);
-		} catch (IOException e) {
+			float qua = Float.parseFloat(Global.txtQua.getText())/100;
+			FileUtil.writeImage(targetUrl, pieceImage, qua);
+		} catch (ImageFormatException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+			this.stopSelf();
+			JOptionPane.showMessageDialog(null, "生成的图片格式错误");
+			return;
+		} catch (IOException e) {
 			e.printStackTrace();
 			this.stopSelf();
 			JOptionPane.showMessageDialog(null, "写入合成后的图片失败");
@@ -248,7 +259,7 @@ public class ImageCreater extends Thread {
 	 * Graphics渲染字符串
 	 * */
 	private void drawString(Graphics2D graphics) {
-		Font font = new Font("宋体", Font.BOLD, 40);
+		Font font = FontUtil.SONG_40;
 		if (font.canDisplay('a') == false) {
 			GraphicsEnvironment ge = GraphicsEnvironment
 					.getLocalGraphicsEnvironment();
@@ -264,7 +275,7 @@ public class ImageCreater extends Thread {
 		if (font.canDisplay('a') == true) {
 			graphics.setFont(font);
 			graphics.drawString(excelInfoVo.school_name, 66, 1651);
-			graphics.drawString(excelInfoVo.name, 66, 1726);
+			graphics.drawString(excelInfoVo.name, 66, 1710);
 			graphics.drawString(excelInfoVo.stu_id + "  "
 					+ excelInfoVo.school_No, 673, 1645);
 			graphics.drawString(excelInfoVo.id, 710, 1690);

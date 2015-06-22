@@ -1,15 +1,17 @@
 package excel;
 
+import global.Global;
+
 import java.io.FileInputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -17,8 +19,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import fileUtil.FileUtil;
-import global.Global;
+import common.FileUtil;
 
 /**
  * excel解析器
@@ -164,7 +165,7 @@ public class ExcelParser {
 					XSSFCell cell = row.getCell(j);
 					if (cell != null) {
 						String cellValue = null;
-						if (cell.getCellType() == XSSFCell.CELL_TYPE_NUMERIC) {
+						if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
 							if (DateUtil.isCellDateFormatted(cell)) {
 								cellValue = new DataFormatter()
 										.formatRawCellContents(
@@ -211,29 +212,29 @@ public class ExcelParser {
 		if (cell == null)
 			return null;
 		switch (cell.getCellType()) {
-		case HSSFCell.CELL_TYPE_NUMERIC:
-			if (HSSFDateUtil.isCellDateFormatted(cell)) {
+		case Cell.CELL_TYPE_NUMERIC:
+			if (DateUtil.isCellDateFormatted(cell)) {
 				SimpleDateFormat sdf = new SimpleDateFormat(
 						"yyyy-MM-dd HH:mm:ss");
-				cellValue = sdf.format(HSSFDateUtil.getJavaDate(cell
+				cellValue = sdf.format(DateUtil.getJavaDate(cell
 						.getNumericCellValue()));
 				break;
 			}
 			cellValue = df.format(cell.getNumericCellValue());
 			break;
-		case HSSFCell.CELL_TYPE_STRING:
+		case Cell.CELL_TYPE_STRING:
 			cellValue = String.valueOf(cell.getStringCellValue());
 			break;
-		case HSSFCell.CELL_TYPE_FORMULA:
+		case Cell.CELL_TYPE_FORMULA:
 			cellValue = String.valueOf(cell.getCellFormula());
 			break;
-		case HSSFCell.CELL_TYPE_BLANK:
+		case Cell.CELL_TYPE_BLANK:
 			cellValue = null;
 			break;
-		case HSSFCell.CELL_TYPE_BOOLEAN:
+		case Cell.CELL_TYPE_BOOLEAN:
 			cellValue = String.valueOf(cell.getBooleanCellValue());
 			break;
-		case HSSFCell.CELL_TYPE_ERROR:
+		case Cell.CELL_TYPE_ERROR:
 			cellValue = String.valueOf(cell.getErrorCellValue());
 			break;
 		}
