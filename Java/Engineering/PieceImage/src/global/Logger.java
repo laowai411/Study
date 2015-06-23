@@ -13,7 +13,7 @@ public class Logger {
 	public static void endReport() {
 		Collection<String> errorList = Global.getErrorList();
 		if (errorList != null) {
-			Object[] msgs = (Object[]) errorList.toArray();
+			Object[] msgs = errorList.toArray();
 			int len = msgs.length;
 			String str = "";
 			for (int i = 0; i < len; i++) {

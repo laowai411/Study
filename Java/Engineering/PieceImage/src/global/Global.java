@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import javax.swing.JButton;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 public class Global {
@@ -33,10 +34,18 @@ public class Global {
 	/**
 	 * 程序运行状态标记
 	 * */
-	public static synchronized void setState(String cusState) {
+	public static void setState(String cusState) {
 		synchronized (state) {
 			state = cusState;
 		}
+	}
+	
+	/**
+	 * 是否在运行中
+	 * */
+	public static boolean isRunning()
+	{
+		return state.equals(STATE_LOAD_EXCEL) || state.equals(STATE_PIECE_IMAGE);
 	}
 
 	/**
@@ -52,6 +61,10 @@ public class Global {
 	 * 照片原始目录
 	 * */
 	public static String srcImageURL;
+	/**
+	 * 生成图片目录
+	 * */
+	public static String targetImageURL;
 
 	/**
 	 * 路径错误的照片列表
@@ -80,7 +93,7 @@ public class Global {
 	// ///////////////////////////////////////////////////////////////////////////////////////////////////
 	// 界面组件控制相关
 	// /////////////////////////////////////////////////////////////////////////////////////////////////
-
+	
 	/**
 	 * excel路径文本
 	 * */
@@ -98,9 +111,17 @@ public class Global {
 	 * */
 	public static JButton btnSrcImage;
 	/**
-	 * excel路径文本
+	 * 合成按钮
 	 * */
 	public static JButton btnPiece;
+	/**
+	 * 生成图片目录选取按钮
+	 * */
+	public static JButton btnTarget;
+	/**
+	 * 生成图片的存放路径文本
+	 * */
+	public static JTextField txtTarget;
 	/**
 	 * 当前状态
 	 * */
@@ -109,16 +130,43 @@ public class Global {
 	 * 进度条
 	 * */
 	public static JProgressBar stateBar;
-
+	/**
+	 * 合成单选
+	 * */
+	public static JRadioButton radioPiece;
+	/**
+	 * 重命名单选
+	 * */
+	public static JRadioButton radioRename;
+	/**
+	 * 宽度文本
+	 * */
+	public static JTextField txtW;
+	/**
+	 * 高度文本
+	 * */
+	public static JTextField txtH;
+	/**
+	 * 图片质量
+	 * */
+	public static JTextField txtQua;
+	
 	/**
 	 * 设置界面元件是否可操作
 	 * */
 	public static void setEnable(boolean cusEnable) {
+		btnPiece.setEnabled(cusEnable);
 		txtExcel.setEnabled(cusEnable);
 		txtSrcImage.setEnabled(cusEnable);
 		btnExcel.setEnabled(cusEnable);
 		btnSrcImage.setEnabled(cusEnable);
-		btnPiece.setEnabled(cusEnable);
+		btnTarget.setEnabled(cusEnable);
+		txtTarget.setEnabled(cusEnable);
+		radioPiece.setEnabled(cusEnable);
+		radioRename.setEnabled(cusEnable);
+		txtW.setEnabled(cusEnable);
+		txtH.setEnabled(cusEnable);
+		txtQua.setEnabled(cusEnable);
 	}
 
 }
