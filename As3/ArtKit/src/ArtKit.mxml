@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   showStatusBar="false"
+					   creationComplete="init()" xmlns:scene="view.scene.*" xmlns:view="view.*"
+					   >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import controller.MainController;
+			
+			private function init():void
+			{
+				MainController.getInstance().init();
+				MainController.getInstance().start();
+			}
+		]]>
+	</fx:Script>
+	<scene:SceneLayer id="gScene" />
+	<view:MenuToolLayer id="gMenu" />
+</s:WindowedApplication>

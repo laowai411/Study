@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300"
+		 addedToStage="onAddToStageHandler()"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import events.ParamEvent;
+			import model.scene.MapManager;
+			import mx.collections.ArrayList;
+			import spark.components.ComboBox;
+			import util.FileChooser;
+			
+			/**
+			 * 下拉菜单
+			 * */
+			private var gCombox:ComboBox;
+			/**
+			 * 下层地图
+			 * */
+			private var gComboxData_downMap:ArrayList;
+			/**
+			 * 上层地图
+			 * */
+			private var gComboxData_map:ArrayList;
+			/**
+			 * 当前操作的按钮
+			 * */
+			private var gCurSelectBtn:Button;
+			/**
+			 * 文件选择器
+			 * */
+			private var gChooser:FileChooser;
+			
+			protected function onAddToStageHandler():void
+			{
+				gCombox = new ComboBox();
+				gCombox.addEventListener(Event.CHANGE, onSelecteComboChangeHandler);
+				
+				gComboxData_downMap = new ArrayList([{"label":"jpg切片目录", "data":0}, {"label":"jpg原图", "data":1}]);
+				gComboxData_map = new ArrayList([{"label":"swf目录", "data":0}, {"label":"png原图", "data":1}]);
+			}
+			
+			/**
+			 * ComboBox选择了
+			 * */
+			private function onSelecteComboChangeHandler(e:Event):void
+			{
+				var type:int = gCombox.selectedItem.data;
+				if(gCombox.parent)
+				{
+					removeElement(gCombox);
+				}
+				if(gChooser)
+				{
+					gChooser.dispose();
+				}
+				else
+				{
+					gChooser = new FileChooser();
+				}
+				gChooser.addEventListener(Event.SELECT, onSelecteFileHandler);
+				if(gCurSelectBtn == gBtnDownMap)
+				{
+					if(type == 0)
+					{
+						gChooser.chooseDir(File.applicationDirectory.nativePath, "选择下层地图");
+					}
+					else
+					{
+						gChooser.chooseFiles(File.applicationDirectory.nativePath, "选择下层地图", [FileChooser.FILTERS_JPG], false);
+					}
+				}
+				else if(gCurSelectBtn == gBtnMap)
+				{
+					if(type == 0)
+					{
+						gChooser.chooseDir(File.applicationDirectory.nativePath, "选择地图");
+					}
+					else
+					{
+						gChooser.chooseFiles(File.applicationDirectory.nativePath, "选择地图", [FileChooser.FILTERS_PNG], false);
+					}
+				}
+			}
+			
+			/**
+			 * 文件被选择了
+			 * */
+			private function onSelecteFileHandler(e:ParamEvent):void
+			{
+				var type:int = e.param.type;
+				var data:Object = e.param.data;
+				if(gCurSelectBtn == gBtnDownMap)
+				{
+					MapManager.getInstance().downMapPath = (data as File).nativePath;
+				}
+				else if(gCurSelectBtn == gBtnMap)
+				{
+					MapManager.getInstance().mapPath = (data as File).nativePath;
+				}
+			}
+			
+			/**
+			 * 更换下层地图
+			 * */
+			protected function onClickDownMapHandler():void
+			{
+				gCombox.dataProvider = gComboxData_downMap;
+				gCombox.x = gBtnDownMap.x;
+				gCombox.y = gBtnDownMap.y + gBtnDownMap.height;
+				addElement(gCombox);
+				gCurSelectBtn = gBtnDownMap;
+			}
+			/**
+			 * 更换地图
+			 * */
+			protected function onClickMapHandler():void
+			{
+				gCombox.dataProvider = gComboxData_map;
+				gCombox.x = gBtnMap.x;
+				gCombox.y = gBtnMap.y + gBtnMap.height;
+				addElement(gCombox);
+				gCurSelectBtn = gBtnMap;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Button id="gBtnDownMap" x="10" y="10" label="下层地图" click="onClickDownMapHandler()"/>
+	<s:Button id="gBtnMap" x="85" y="10" label="地图" click="onClickMapHandler()"/>
+</s:Group>
